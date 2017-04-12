@@ -14,6 +14,7 @@ SoftwareSerial BTSerie(RxD,TxD);
 #define POWER_METER_MODULE   0x03
 #define STATUS_LEDS_MODULE   0x04
 #define SERVO_MODULE         0x05
+#define LINKY_MODULE         0x06
 
 #define MODULE_5A            185
 #define MODULE_20A           100
@@ -89,6 +90,11 @@ void             powermeter_loop(loaded_module* module);
 void             powermeter_string_value(loaded_module* module, char* buffer);
 byte             powermeter_append_event(loaded_module* module, char* buffer);
 
+void             linky_setup(loaded_module* module, va_list args);
+void             linky_loop(loaded_module* module);
+byte             linky_event(loaded_module* module, char* buffer);
+
+
 void             setup_status_leds(loaded_module* module, va_list args);
 void             loop_status_leds(loaded_module* module);
 
@@ -97,6 +103,7 @@ s_module compiled_modules[] = {
   {LED_MODULE,         "Led",        led_setup,         led_loop,          led_read,    led_write,  0,                       led_append_event},
   {POWER_METER_MODULE, "PowerMeter", powermeter_setup,  powermeter_loop,   0,           0,          powermeter_string_value, powermeter_append_event},
   {STATUS_LEDS_MODULE, "StatusLeds", setup_status_leds, loop_status_leds},
+  {LINKY_MODULE,       "Linky Relay",linky_setup,       linky_loop,        0,           0,          0,                       linky_event},
   0
 };
 
@@ -208,6 +215,8 @@ void setup() {
 //  add_module(POWER_METER_MODULE, A2, MODULE_20A);
 //  add_module(POWER_METER_MODULE, A3, MODULE_30A);
 
+  // Linky rekay
+//  add_module(LINKY_MODULE);
   Serial.println("+-----------------+");
   
 //  Serial.print("+ Register i2c bus at ");Serial.print((int)channel);Serial.println();
