@@ -40,15 +40,7 @@ void powermeter_setup(struct t_loaded_module *module, va_list args) {
   Serial.print(power_meter->pin->pin);
   Serial.print(" calibrated for ");
   Serial.print(power_meter->mVperAmp);
-  if (power_meter->mVperAmp == MODULE_5A) {
-    Serial.print(" (5A)");
-  }
-  else if (power_meter->mVperAmp == MODULE_20A) {
-    Serial.print(" (20A)");
-  }
-  else if (power_meter->mVperAmp == MODULE_30A) {
-    Serial.print(" (30A)");
-  }
+  Serial.print(power == MODULE_5A? " (5A)": (power == MODULE_20A? " (20A)": (power == MODULE_30A? " (30A)": "")));
   Serial.println();
 }
 
