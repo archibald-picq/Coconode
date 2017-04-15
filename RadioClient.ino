@@ -4,7 +4,6 @@
 #include "RF24.h"
 //#include "printf.h"
 
-RF24 radio(9,10);
 
 // Radio pipe addresses for the 2 nodes to communicate.
 const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
@@ -12,6 +11,7 @@ const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
 typedef struct s_linky {
   byte            iinst;  // in Ampere, can be from 0 to max subrscribed power (generaly 27 = 6kw, 40 = 9kw, 12kw = 54 ...), no more than 255
   unsigned short  papp;
+  RF24            *radio;
 } t_linky;
 
 typedef struct s_radio_packet {
@@ -21,24 +21,25 @@ typedef struct s_radio_packet {
 } radio_packet;
 
 void display_ping(loaded_module* module, struct s_radio_packet *packet) {
+  struct s_linky *custom = (struct s_linky*)(module->custom);
   unsigned long value;
   memcpy(&value, &(packet->value), sizeof(unsigned long));
   // Delay just a little bit to let the other unit
   // make the transition to receiver
   delay(20);
-  
+
   // First, stop listening so we can talk
-  radio.stopListening();
+  custom->radio->stopListening();
   
   Serial.print("Got ping ");
   Serial.print(value);
   Serial.print(" ms");
   // Send the final one back.
-  radio.write((void*)&(packet->checksum), sizeof(byte));
+  custom->radio->write((void*)&(packet->checksum), sizeof(byte));
   Serial.println(", pong back.");
 
   // Now, resume listening so we catch the next packets.
-  radio.startListening();
+  custom->radio->startListening();
 }
 
 void display_iinst(loaded_module* module, struct s_radio_packet *packet) {
@@ -75,23 +76,28 @@ void             linky_setup(loaded_module* module, va_list args) {
   struct s_linky *custom = (struct s_linky *)malloc(sizeof(s_linky));
   module->custom = custom;
 
-  Serial.print(" --> setup radio relay from linky ...");
-  radio.begin();
+
+  int ce = va_arg(args, int);
+  int cs = va_arg(args, int);
+  custom->radio = new RF24(ce, cs);
+  
+  Serial.print(F(" --> "));
+  custom->radio->begin();
 
   // optionally, increase the delay between retries & # of retries
-  radio.setRetries(15,15);
+  custom->radio->setRetries(15, 15);
 
   // optionally, reduce the payload size.  seems to improve reliability
-  radio.setPayloadSize(8);
+  custom->radio->setPayloadSize(8);
 
   //
   // Open pipes to other nodes for communication
   // This simple sketch opens two pipes for these two nodes to communicate back and forth.
 
-  radio.openWritingPipe(pipes[1]);
-  radio.openReadingPipe(1,pipes[0]);
+  custom->radio->openWritingPipe(pipes[1]);
+  custom->radio->openReadingPipe(1, pipes[0]);
 
-  radio.startListening();
+  custom->radio->startListening();
   custom->iinst = 0;
   custom->papp = 0;
 
@@ -100,15 +106,16 @@ void             linky_setup(loaded_module* module, va_list args) {
 }
 
 void             linky_loop(loaded_module* module) {
+  struct s_linky *custom = (struct s_linky*)(module->custom);
   // if there is data ready
-  if (!radio.available())
+  if (!custom->radio->available())
     return;
 
   // Dump the payloads until we've gotten everything
   bool done = false;
   while (!done) {
     // Fetch the payload, and see if this was the last one.
-    done = radio.read( &packet, sizeof(packet) );
+    done = custom->radio->read( &packet, sizeof(packet) );
 
     if (packet.type == 1)
       display_ping(module, &packet);
