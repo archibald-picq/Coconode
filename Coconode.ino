@@ -15,6 +15,7 @@ SoftwareSerial BTSerie(RxD,TxD);
 #define STATUS_LEDS_MODULE   0x04
 #define SERVO_MODULE         0x05
 #define LINKY_MODULE         0x06
+#define THERMOMETER_MODULE   0x07
 
 #define MODULE_5A            185
 #define MODULE_20A           100
@@ -90,13 +91,17 @@ void             powermeter_loop(loaded_module* module);
 void             powermeter_string_value(loaded_module* module, char* buffer);
 byte             powermeter_append_event(loaded_module* module, char* buffer);
 
+void             setup_status_leds(loaded_module* module, va_list args);
+void             loop_status_leds(loaded_module* module);
+
 void             linky_setup(loaded_module* module, va_list args);
 void             linky_loop(loaded_module* module);
 byte             linky_event(loaded_module* module, char* buffer);
 
+void             thermometer_setup(loaded_module* module, va_list args);
+void             thermometer_loop(loaded_module* module);
+byte             thermometer_event(loaded_module* module, char* buffer);
 
-void             setup_status_leds(loaded_module* module, va_list args);
-void             loop_status_leds(loaded_module* module);
 
 s_module compiled_modules[] = {
   {BUTTON_MODULE,      "Button",     button_setup,      button_loop,       button_read, 0,          button_string_value,     button_append_event},
@@ -104,6 +109,7 @@ s_module compiled_modules[] = {
   {POWER_METER_MODULE, "PowerMeter", powermeter_setup,  powermeter_loop,   0,           0,          powermeter_string_value, powermeter_append_event},
   {STATUS_LEDS_MODULE, "StatusLeds", setup_status_leds, loop_status_leds},
   {LINKY_MODULE,       "Linky Relay",linky_setup,       linky_loop,        0,           0,          0,                       linky_event},
+  {THERMOMETER_MODULE, "Thermometer",thermometer_setup, thermometer_loop,  0,           0,          0,                       thermometer_event},
   0
 };
 
@@ -152,13 +158,15 @@ void   add_module(byte code, ...) {
   if (module) {
 //    Serial.print(" (");Serial.print(module->name);Serial.print(") insert at ");Serial.print((int)empty);Serial.print(" : ");Serial.println();
     modules[empty].module = module;
-    Serial.print("call setup: ");
+    Serial.print(F("call "));
+    Serial.print(modules[empty].module->name);
+    Serial.print(F(" setup: "));
     modules[empty].module->setup_func(&(modules[empty]), args);
 //    Serial.println("");
     return;
   }
   va_end ( args );
-  Serial.println("NOT FOUND");
+  Serial.println(F("NOT FOUND"));
 }
 
 void  trigger_all_modules_change() {
@@ -187,27 +195,28 @@ void setup() {
   uniqName = get_uniq_board_name();
   byte channel = get_uniq_board_channel();
   
-//  Serial.println("+-----------------+");
-  Serial.print("+ Coco node: ");Serial.print(uniqName);Serial.print(", i2c id: ");Serial.println((int)channel);
+//  Serial.println(F("+-----------------+"));
+  Serial.print(F("+ Coco node: "));Serial.print(uniqName);Serial.print(", i2c id: ");Serial.println((int)channel);
   Serial.println("Compiled: " __DATE__ ", " __TIME__ ", " __VERSION__);
-  Serial.println("+-----------------+");
+  Serial.println(F("+-----------------+"));
 
-  Serial.println("+ init modules");
+  Serial.println(F("+ init modules"));
   // breadboard
-//  add_module(BUTTON_MODULE, 13);
+//  add_module(BUTTON_MODULE, 7);
 //  add_module(BUTTON_MODULE, A6);
 //  add_module(BUTTON_MODULE, A7);
-//  add_module(STATUS_LEDS_MODULE, 10, 11, 12);
+//  add_module(STATUS_LEDS_MODULE, 4, 5, 6);
 //  add_module(LED_MODULE, 4);
 //  add_module(LED_MODULE, 5);
 //  add_module(LED_MODULE, 6);
 //  add_module(POWER_METER_MODULE, A1, MODULE_20A);
+  add_module(THERMOMETER_MODULE, 8);
 
   // triplite
-  add_module(LED_MODULE, 4);
-  add_module(LED_MODULE, 5);
-  add_module(LED_MODULE, 6);
-  add_module(POWER_METER_MODULE, A1, MODULE_20A);
+//  add_module(LED_MODULE, 4);
+//  add_module(LED_MODULE, 5);
+//  add_module(LED_MODULE, 6);
+//  add_module(POWER_METER_MODULE, A1, MODULE_20A);
 
   // disjoncteur
 //  add_module(POWER_METER_MODULE, A0, MODULE_20A);
@@ -216,18 +225,17 @@ void setup() {
 //  add_module(POWER_METER_MODULE, A3, MODULE_30A);
 
   // Linky rekay
-//  add_module(LINKY_MODULE);
-  Serial.println("+-----------------+");
+//  add_module(LINKY_MODULE, 9, 10);
+  Serial.println(F("+-----------------+"));
   
 //  Serial.print("+ Register i2c bus at ");Serial.print((int)channel);Serial.println();
 
-//  Serial.println("+-----------------+");
+//  Serial.println(F("+-----------------+"));
 
   // init
   Wire.begin(channel);
   Wire.onReceive(receiveEventI2C); // register event
   Wire.onRequest(requestEventI2C);
-  
 }
 
 void loop() {
