@@ -36,9 +36,9 @@ void powermeter_setup(struct t_loaded_module *module, va_list args) {
   power_meter->Isum = 0;
   
   // TODO: check supported input pin (analog)
-  Serial.print(" --> setup power meter on pin ");
+  Serial.print(F(" --> pin "));
   Serial.print(power_meter->pin->pin);
-  Serial.print(" calibrated for ");
+  Serial.print(F(" calibrated for "));
   Serial.print(power_meter->mVperAmp);
   Serial.print(power == MODULE_5A? " (5A)": (power == MODULE_20A? " (20A)": (power == MODULE_30A? " (30A)": "")));
   Serial.println();

@@ -10,7 +10,7 @@ void             button_setup(loaded_module *module, va_list args) {
   int nbr = va_arg(args, int);
   
   t_pin *pin = get_pin(nbr);
-  Serial.print(" --> Button setup pin ");Serial.print((int)(nbr));Serial.print(" to mode INPUT");Serial.println("");
+  Serial.print(F(" --> pin "));Serial.print((int)(nbr));Serial.print(F(" to mode INPUT"));Serial.println("");
   if (pin->used) {
     Serial.print(" pin already in use");
     return;
@@ -37,7 +37,7 @@ void             button_loop(loaded_module *module) {
     // if the button state has changed:
     if (reading != custom->value) {
       custom->value = reading;
-//      Serial.print("Button pin ");Serial.print((int)(custom->pin->pin));Serial.print(" changed to ");Serial.print(custom->value == 1? "HIGH": "LOW");Serial.println("");
+      Serial.print(F("Button pin "));Serial.print((int)(custom->pin->pin));Serial.print(F(" changed to "));Serial.print(custom->value == 1? "HIGH": "LOW");Serial.println();
       broadcast_change(module);
     }
   }
@@ -67,9 +67,9 @@ void             button_string_value(loaded_module* module, char* buffer) {
   t_module_button_custom *custom = (t_module_button_custom *)(module->custom);
 
   if (custom->value)
-    memcpy(buffer, "HIGH", 5);
+    memcpy(buffer, F("HIGH"), 5);
   else
-    memcpy(buffer, "LOW", 4);
+    memcpy(buffer, F("LOW"), 4);
 }
 
 byte             button_append_event(loaded_module* module, char* buffer) {

@@ -187,9 +187,8 @@ byte find_event_length_for_bytes(byte length) {
  */
 
 void command_send_echo(byte buffer[], byte length, void (*send)(const byte *buffer, byte length)) {
-  Serial.print("echo value ");
-  Serial.print((int)buffer[0]);
-  Serial.println("");
+  Serial.print(F("echo value "));
+  Serial.println((int)buffer[0]);
 //  send_return(1);
 }
 
@@ -230,11 +229,11 @@ void command_send_device_name(byte buffer[], byte length, void (*send)(const byt
   resp[0] = COMMAND_RESPONSE_OK;
   resp[1] = strlen(uniqName);
   memcpy(&(resp[3]), uniqName, resp[1]);
-  Serial.print("name > send ");
+  Serial.print(F("name > send "));
   Serial.print((int)resp[1]);
-  Serial.print(" bytes (");
+  Serial.print(F(" bytes ("));
   Serial.print(uniqName);
-  Serial.println(")");
+  Serial.println(F(")"));
   resp[2] = resp_checksum(&(resp[3]), resp[1]);
   send(resp, resp[1]+3);
 }
@@ -245,9 +244,9 @@ void command_send_boot_time(byte buffer[], byte length, void (*send)(const byte 
   resp[0] = COMMAND_RESPONSE_OK;
   resp[1] = sizeof(time);
   memcpy(&(buffer[3]), &time, resp[1]);
-  Serial.print("boot > send ");
+  Serial.print(F("boot > send "));
   Serial.print((int)resp[1]);
-  Serial.println(" bytes");
+  Serial.println(F(" bytes"));
   resp[2] = resp_checksum(&(resp[3]), resp[1]);
   send(resp, resp[1]+3);
 }
@@ -262,9 +261,9 @@ void command_send_build_time(byte buffer[], byte length, void (*send)(const byte
   memcpy(position, __TIME__, strlen(__TIME__));
   position += strlen(__TIME__);
   resp[1] = position - &(resp[3]);
-  Serial.print("build > send ");
+  Serial.print(F("build > send "));
   Serial.print((int)resp[1]);
-  Serial.println(" bytes");
+  Serial.println(F(" bytes"));
   resp[2] = resp_checksum(&(resp[3]), resp[1]);
   send(resp, resp[1]+3);
 }
@@ -276,9 +275,9 @@ void command_send_module_def(byte buffer[], byte length, void (*send)(const byte
   resp[1] = dump_modules(&(resp[3]));
   
   resp[2] = resp_checksum(&(resp[3]), resp[1]);
-  Serial.print("--- send module def of ");
+  Serial.print(F("--- send module def of "));
   Serial.print(resp[1]);
-  Serial.print(" bytes with checksum ");
+  Serial.print(F(" bytes with checksum "));
   Serial.print(resp[2]);
   Serial.println();
   send(resp, resp[1]+3);
@@ -293,28 +292,28 @@ void command_set_module_value(byte buffer[], byte length, void (*send)(const byt
 
   byte checksum = resp_checksum(&(buffer[1]), length-1);
   if (checksum != buffer[0]) {
-    Serial.print("Bad checksum for command body, found ");
+    Serial.print(F("Bad checksum for command body, found "));
     Serial.print((int)checksum);
-    Serial.print(" should be ");
+    Serial.print(F(" should be "));
     Serial.print((int)buffer[0]);
     Serial.println();
     return;
   }
-  Serial.print("checksum ");
+  Serial.print(F("checksum "));
   Serial.print((int)buffer[0]);
-  Serial.print(" OK, set module value ");
+  Serial.print(F(" OK, set module value "));
   Serial.print((int)(buffer[1]));
-  Serial.print(" to value ");
+  Serial.print(F(" to value "));
   Serial.print((int)(buffer[2]));
-  Serial.print(" (");
+  Serial.print(F(" ("));
   Serial.print(length - 2);
-  Serial.print(" bytes)");
+  Serial.print(F(" bytes)"));
   Serial.println();
 
   loaded_module* module = find_module_by_index(buffer[1]);
 
   if (!module->module->write_func) {
-    Serial.println("Module is not writable: read only");
+    Serial.println(F("Module is not writable: read only"));
     return;
   }
   module->module->write_func(module, (int)(buffer[2]));
@@ -338,13 +337,13 @@ void command_send_event_queue(byte buffer[], byte length, void (*send)(const byt
 }
 
 void command_wait_for_variable_command(byte buffer[], byte length, void (*send)(const byte *buffer, byte length)) {
-  Serial.print("wait for variable command ");
+  Serial.print(F("wait for variable command "));
   Serial.print((int)buffer[0]);
-  Serial.print(" of size ");
+  Serial.print(F(" of size "));
   Serial.print((int)buffer[1]);
-  Serial.print(" with checksum ");
+  Serial.print(F(" with checksum "));
   Serial.print((int)buffer[2]);
-  Serial.println("");
+  Serial.println();
   
   read_buffer_length = buffer[1];
   read_buffer_position = 0;
@@ -478,11 +477,11 @@ void processEvent(byte c, void (*send)(const byte *buffer, byte length)) {
   else {
     i2c_pending_read = 3;
     
-    Serial.print(" > onRequest(), unsupported command ");
+    Serial.print(F(" > onRequest(), unsupported command "));
     Serial.print((int)command);
-    Serial.print(" with remaining params ");
+    Serial.print(F(" with remaining params "));
     Serial.print((int)params);
-    Serial.println("");
+    Serial.println();
     
     send_return(COMMAND_RESPONSE_BAD_REQUEST, send);
     return;

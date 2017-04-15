@@ -11,7 +11,7 @@ void             led_setup(struct t_loaded_module *module, va_list args) {
   int nbr = va_arg(args, int);
 
   custom->pin = get_pin(nbr);
-  Serial.print(" --> setup led pin "); Serial.print((int)nbr); Serial.print(" to mode OUTPUT"); Serial.println("");
+  Serial.print(F(" --> pin ")); Serial.print((int)nbr); Serial.print(F(" to mode OUTPUT")); Serial.println(F(""));
   pinMode(custom->pin->pin, OUTPUT);
 }
 

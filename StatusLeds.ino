@@ -30,20 +30,16 @@ void setup_status_leds(struct t_loaded_module *module, va_list args) {
   struct s_status_leds *status_leds = (struct s_status_leds *)malloc(sizeof(s_status_leds));
   module->custom = status_leds;
   
-  int ledRedNbr = va_arg(args, int);
-  int ledOrangeNbr = va_arg(args, int);
-  int ledGreenNbr = va_arg(args, int);
-  
-  status_leds->ledRed = get_pin(ledRedNbr);
-  status_leds->ledOrange = get_pin(ledOrangeNbr);
-  status_leds->ledGreen = get_pin(ledGreenNbr);
+  status_leds->ledRed = get_pin(va_arg(args, int));
+  status_leds->ledOrange = get_pin(va_arg(args, int));
+  status_leds->ledGreen = get_pin(va_arg(args, int));
   
   pinMode(status_leds->ledRed->pin, OUTPUT);
   pinMode(status_leds->ledOrange->pin, OUTPUT);
   pinMode(status_leds->ledGreen->pin, OUTPUT);
   state = STATE_INITIALIZED;
 
-  Serial.print(" --> StatusLeds setup {red: ");Serial.print((int)(status_leds->ledRed->pin));Serial.print(", orange: ");Serial.print((int)status_leds->ledOrange->pin);Serial.print(", green: ");Serial.print((int)status_leds->ledGreen->pin);Serial.println("}");
+  Serial.print(F(" --> {red: "));Serial.print((int)(status_leds->ledRed->pin));Serial.print(F(", orange: "));Serial.print((int)status_leds->ledOrange->pin);Serial.print(F(", green: "));Serial.print((int)status_leds->ledGreen->pin);Serial.println(F("}"));
 }
 
 void status_leds_receive_event() {
@@ -104,9 +100,9 @@ void loop_status_leds(struct t_loaded_module *module) {
   }
   if ((millis() - lastAdvertise) > TIMEOUT_ADVERTISE) {
     if (state > STATE_INITIALIZED) {
-//      Serial.print("timeout advertise after ");
+//      Serial.print(F("timeout advertise after "));
 //      Serial.print(millis() - lastHeartBeat);
-//      Serial.println(" ms");
+//      Serial.println(F(" ms"));
       // retrograde if no polling for long period
       state = STATE_INITIALIZED;
     }
@@ -114,9 +110,9 @@ void loop_status_leds(struct t_loaded_module *module) {
   }
   if ((millis() - lastPolled) > TIMEOUT_SYNCHRO) {
     if (state > STATE_I2C_CONFIGURING) {
-      Serial.print("timeout synchro master after ");
+      Serial.print(F("timeout synchro master after "));
       Serial.print(millis() - lastHeartBeat);
-      Serial.println(" ms");
+      Serial.println(F(" ms"));
       // retrograde if no polling for long period
       state = STATE_I2C_CONFIGURING;
     }
