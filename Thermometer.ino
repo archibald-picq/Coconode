@@ -30,24 +30,15 @@ const int DS18B20_ID=0x28;
 const int SERIAL_PORT=9600;
 
 void             thermometer_setup(loaded_module* module, va_list args) {
-  struct s_bus *thermometer = (struct s_bus *)malloc(sizeof(s_bus));
-  module->custom = thermometer;
+  struct s_bus *bus = (struct s_bus *)malloc(sizeof(s_bus));
+  module->custom = bus;
+  bus->thermometers = 0;
  
   int nbr = va_arg(args, int);
-//  Serial.print("pin: ");
-//  Serial.print(nbr);
-  thermometer->ds = new OneWire(nbr); // on pin DS18B20_PIN (a 4.7K resistor is necessary)
+
+  bus->ds = new OneWire(nbr); // on pin DS18B20_PIN (a 4.7K resistor is necessary)
   Serial.print(F(" --> OneWire init"));
-  // Initialisation du port de communication avec le PC
-//  Serial.begin(SERIAL_PORT);
-//  Serial.println("Initialisation du programme");
-  
-  // TODO: check supported input pin (analog)
-//  Serial.print(" --> setup thermometer on pin ");
-//  Serial.print(thermometer->pin->pin);
-//  Serial.print(" calibrated for ");
-//  Serial.print(thermometer->mVperAmp);
-//  Serial.print(power == MODULE_5A? " (5A)": (power == MODULE_20A? " (20A)": (power == MODULE_30A? " (30A)": "")));
+
   Serial.println();
 }
 
@@ -166,9 +157,9 @@ void detect_bus_devices(struct s_bus *bus) {
   }
 
   // remove undetected
-  current = &(bus->thermometers);
+  ;
   struct s_thermometer  **to_free;
-  for (pos = 0; *current; pos++) {
+  for (pos = 0, current = &(bus->thermometers); *current; pos++) {
     if (!(*current)->detected) {
       Serial.print("pop device at ");
       Serial.print((int)pos);
@@ -191,11 +182,10 @@ void detect_bus_devices(struct s_bus *bus) {
   Serial.print((int)count);
   Serial.print(" => ");
   
-  current = &(bus->thermometers);
-  while (*current) {
+  ;
+  for (current = &(bus->thermometers); *current; current = &((*current)->next)) {
     print_mac(&((*current)->addr[1]));
-    current = &((*current)->next);
-    if (*current)
+    if ((*current)->next)
       Serial.print(" || ");
   }
 
@@ -208,62 +198,82 @@ void detect_bus_devices(struct s_bus *bus) {
 }
 
 void             thermometer_loop(loaded_module* module) {
-  struct s_bus *thermometer = (struct s_bus*)(module->custom);
+  struct s_bus *bus = (struct s_bus*)(module->custom);
 
   if ((millis() - thermometer_detect_time) > 5000) {
-      detect_bus_devices(thermometer);
+      detect_bus_devices(bus);
       thermometer_detect_time = millis();
   }
 
-//  if ((millis()-thermometer_start_time) < 850) {
-//    if (!thermometer->asked) {
-////      float temp = 0.0;
-//      
-//      thermometer->asked = true;
-//
-//
-//      
-//      // Demander au capteur de mémoriser la température et lui laisser 850ms pour le faire (voir datasheet)
-//      thermometer->ds->reset();
-//      thermometer->ds->select(thermometer->addr);
-//      thermometer->ds->write(0x44);
-//
-//    }
-//  }
-//  else {
-//    if (!thermometer->asked) {
-//      start_time = millis();
-//      
-//    }
-//    else {
-//      
-//      byte data[12];
-//      byte i;
-//      // Demander au capteur de nous envoyer la température mémorisé
-//      thermometer->ds->reset();
-//      thermometer->ds->select(thermometer->addr);
-//      thermometer->ds->write(0xBE);
-//      
-//      // Le MOT reçu du capteur fait 9 octets, on les charge donc un par un dans le tableau data[]
-//      for ( i = 0; i < 9; i++) {
-//        data[i] = thermometer->ds->read();
-//      }
-//      // Puis on converti la température (*0.0625 car la température est stockée sur 12 bits)
-//      thermometer->temperature = ( (data[1] << 8) + data[0] )*0.0625;
-//      
-//      //thermometer->temperature = getTemperatureDS18b20(); // On lance la fonction d'acquisition de T°
-//      
-//      thermometer_start_time = millis();
-//      thermometer->asked = false;
-//      // on affiche la T°
-////      Serial.print(F("temperature: ")); 
-////      Serial.println(thermometer->temperature);
-//    }
-//  }
+  if ((millis()-thermometer_start_time) < 850) {
+    if (!bus->asked) {
+//      float temp = 0.0;
+      
+      bus->asked = true;
+
+
+      
+      // Demander au capteur de mémoriser la température et lui laisser 850ms pour le faire (voir datasheet)
+
+      Serial.print("ask ");
+      for (struct s_thermometer *sensor = bus->thermometers; sensor; sensor = sensor->next) {
+        print_mac(&(sensor->addr[1]));
+        if (sensor->next)Serial.print(", ");
+        bus->ds->reset();
+        bus->ds->select(sensor->addr);
+        bus->ds->write(0x44);
+      }
+      Serial.println();
+
+    }
+  }
+  else {
+    if (!bus->asked) {
+      start_time = millis();
+      
+    }
+    else {
+      
+      byte data[12];
+      // Demander au capteur de nous envoyer la température mémorisé
+
+      for (struct s_thermometer *sensor = bus->thermometers; sensor; sensor = sensor->next) {
+        Serial.print(" -> read ");
+        print_mac(&(sensor->addr[1]));
+        
+        bus->ds->reset();
+        bus->ds->select(sensor->addr);
+        bus->ds->write(0xBE);
+        
+        // Le MOT reçu du capteur fait 9 octets, on les charge donc un par un dans le tableau data[]
+        for (int i = 0; i < 9; i++) {
+          data[i] = bus->ds->read();
+        }
+        // Puis on converti la température (*0.0625 car la température est stockée sur 12 bits)
+        sensor->temperature = ( (data[1] << 8) + data[0] )*0.0625;
+
+        Serial.print(F("temperature: ")); 
+        Serial.print(sensor->temperature);
+
+//        //bus->temperature = getTemperatureDS18b20(); // On lance la fonction d'acquisition de T°
+        Serial.println();
+      }
+      broadcast_change(module);
+
+      thermometer_start_time = millis();
+      bus->asked = false;
+    }
+  }
 }
 
 byte             thermometer_event(loaded_module* module, char* buffer) {
-  return 0;
+  struct s_bus *bus = (struct s_bus*)(module->custom);
+  byte length = 0;
+  for (struct s_thermometer *sensor = bus->thermometers; sensor; sensor = sensor->next) {
+    memcpy(&(buffer[length]), &(sensor->temperature), sizeof(float));
+    length += sizeof(float);
+  }
+  return length;
 }
 
 
