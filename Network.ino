@@ -16,6 +16,7 @@
 #define COMMAND_SET_NAME 9
 #define COMMAND_SEND_MODULE_DEF 10
 #define COMMAND_SET_MODULE_VALUE 11
+#define COMMAND_CLEAR_BUFFER 12
 #define COMMAND_ECHO 47
 
 #define COMMAND_RESPONSE_OK 1
@@ -51,13 +52,14 @@ void send_i2c(const byte *buffer, byte length) {
     send_buffer_length += length-i2c_pending_read;
   }
 //  for (byte c = 0; c < i2c_pending_read; c++) {
-//    Serial.print(", ");
+//    if (c)Serial.print(", ");
 //    Serial.print(buffer[c], HEX);
 //  }
   Wire.write(buffer, i2c_pending_read);
   i2c_pending_read = 0;
 //  Serial.println();
 }
+
 
 void processEvent(byte c, void (*send)(const byte *buffer, byte length));
 
@@ -85,14 +87,6 @@ void send_return(byte value, void (*send)(const byte *buffer, byte length)) {
   buffer[1] = 0;
   buffer[2] = 0;
   send(buffer, 3);
-}
-
-int make_mask(byte offset, byte length) {
-  int mask = 0;
-  
-  for (byte i=0; i < length; i++)
-    mask |= 1 << offset + i;
-  return mask;
 }
 
 
@@ -218,6 +212,13 @@ void clear_event_queue(byte buffer[], byte length, void (*send)(const byte *buff
   else {
     send_return(COMMAND_RESPONSE_BAD_REQUEST, send);
   }
+}
+
+
+void command_clear_buffer(byte buffer[], byte length, void (*send)(const byte *buffer, byte length)) {
+  Serial.println(F("clear buffer"));
+  send_buffer_length = 0;
+  send_return(COMMAND_RESPONSE_OK, send);
 }
 
 void command_send_magic(byte buffer[], byte length, void (*send)(const byte *buffer, byte length)) {
@@ -460,6 +461,10 @@ void processEvent(byte c, void (*send)(const byte *buffer, byte length)) {
   else if (command == COMMAND_SEND_MODULE_DEF) {
     i2c_pending_read = 3;
     buffer_command = command_send_module_def;
+  }
+  else if (command == COMMAND_CLEAR_BUFFER) {
+    i2c_pending_read = 3;
+    buffer_command = command_clear_buffer;
   }
 //  else if (command == COMMAND_SET_BITMASK_VALUE) {
 //    Serial.println("receive command SET_BITMASK, wait for data (2 bytes)");
