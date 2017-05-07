@@ -99,9 +99,9 @@ struct s_thermometer *thermometer_search(struct s_bus *bus, byte *addr, byte *po
   struct s_thermometer **current = &(bus->thermometers);
   for (*pos = 0; *current; current = &((*current)->next), (*pos)++) {
     if (!memcmp(&((*current)->addr[1]), addr, 6)) {
-      Serial.print(F(" (found "));
-      Serial.print((int)*pos);
-      Serial.print(F(" at)"));
+//      Serial.print(F(" (found "));
+//      Serial.print((int)*pos);
+//      Serial.print(F(" at)"));
       return *current;
     }
   }
@@ -116,25 +116,25 @@ void detect_bus_devices(struct s_bus *bus) {
 
   thermometer_reset_detected(bus);
   
-  Serial.println("detecting devices ...");
-  Serial.flush();
+//  Serial.println("detecting devices ...");
+//  Serial.flush();
   while (bus->ds->search(addr)) {
     
     // Cette fonction sert à surveiller si la transmission s'est bien passée
     if (OneWire::crc8(addr, 7) != addr[7]) {
-      Serial.println(F("getTemperatureDS18b20 : <!> CRC is not valid! <!>"));
+//      Serial.println(F("getTemperatureDS18b20 : <!> CRC is not valid! <!>"));
       continue;
     }
     
     // On vérifie que l'élément trouvé est bien un DS18B20
     if (addr[0] != DS18B20_ID) {
-      Serial.println(F("Not a DS18B20"));
+//      Serial.println(F("Not a DS18B20"));
       continue;
     }
 
     
-    Serial.print("found device ");
-    print_mac(&(addr[1]));
+//    Serial.print("found device ");
+//    print_mac(&(addr[1]));
 
     // search existing
     struct s_thermometer *found = thermometer_search(bus, &(addr[1]), &pos);
@@ -142,18 +142,18 @@ void detect_bus_devices(struct s_bus *bus) {
     if (!found) {
       // find last
       struct s_thermometer  **last = thermometer_get_last(bus);
-      Serial.print(F(" (allocate)"));
-      Serial.flush();
+//      Serial.print(F(" (allocate)"));
+//      Serial.flush();
 
       found = thermometer_insert_at(last);
-      Serial.print(F(", copy addr"));
-      Serial.flush();
+//      Serial.print(F(", copy addr"));
+//      Serial.flush();
       memcpy(found->addr, addr, 8);
     }
     
     found->detected = true;
     
-    Serial.println();
+//    Serial.println();
   }
 
   // remove undetected
@@ -161,35 +161,35 @@ void detect_bus_devices(struct s_bus *bus) {
   struct s_thermometer  **to_free;
   for (pos = 0, current = &(bus->thermometers); *current; pos++) {
     if (!(*current)->detected) {
-      Serial.print("pop device at ");
-      Serial.print((int)pos);
-      Serial.print(" ");
-      print_mac(&((*current)->addr[1]));
+//      Serial.print("pop device at ");
+//      Serial.print((int)pos);
+//      Serial.print(" ");
+//      print_mac(&((*current)->addr[1]));
       
       to_free = current;
       *current = (*current)->next;
-      Serial.print("");
+//      Serial.print("");
       free(*to_free);
-      Serial.println();
+//      Serial.println();
     }
     else {
       current = &((*current)->next);
     }
   }
 
-  byte count = thermometer_count(bus);
-  Serial.print(F("thermometer count "));
-  Serial.print((int)count);
-  Serial.print(" => ");
+//  byte count = thermometer_count(bus);
+//  Serial.print(F("thermometer count "));
+//  Serial.print((int)count);
+//  Serial.print(" => ");
   
-  ;
-  for (current = &(bus->thermometers); *current; current = &((*current)->next)) {
-    print_mac(&((*current)->addr[1]));
-    if ((*current)->next)
-      Serial.print(" || ");
-  }
 
-  Serial.println();
+//  for (current = &(bus->thermometers); *current; current = &((*current)->next)) {
+//    print_mac(&((*current)->addr[1]));
+//    if ((*current)->next)
+//      Serial.print(" || ");
+//  }
+
+//  Serial.println();
   
   if (bus->thermometers) {
 //    Serial.println("using default device");
@@ -215,15 +215,15 @@ void             thermometer_loop(loaded_module* module) {
       
       // Demander au capteur de mémoriser la température et lui laisser 850ms pour le faire (voir datasheet)
 
-      Serial.print("ask ");
+//      Serial.print("ask ");
       for (struct s_thermometer *sensor = bus->thermometers; sensor; sensor = sensor->next) {
-        print_mac(&(sensor->addr[1]));
-        if (sensor->next)Serial.print(", ");
+//        print_mac(&(sensor->addr[1]));
+//        if (sensor->next)Serial.print(", ");
         bus->ds->reset();
         bus->ds->select(sensor->addr);
         bus->ds->write(0x44);
       }
-      Serial.println();
+//      Serial.println();
 
     }
   }
@@ -238,8 +238,8 @@ void             thermometer_loop(loaded_module* module) {
       // Demander au capteur de nous envoyer la température mémorisé
 
       for (struct s_thermometer *sensor = bus->thermometers; sensor; sensor = sensor->next) {
-        Serial.print(" -> read ");
-        print_mac(&(sensor->addr[1]));
+//        Serial.print(" -> read ");
+//        print_mac(&(sensor->addr[1]));
         
         bus->ds->reset();
         bus->ds->select(sensor->addr);
@@ -252,11 +252,11 @@ void             thermometer_loop(loaded_module* module) {
         // Puis on converti la température (*0.0625 car la température est stockée sur 12 bits)
         sensor->temperature = ( (data[1] << 8) + data[0] )*0.0625;
 
-        Serial.print(F("temperature: ")); 
-        Serial.print(sensor->temperature);
+//        Serial.print(F("temperature: ")); 
+//        Serial.print(sensor->temperature);
 
 //        //bus->temperature = getTemperatureDS18b20(); // On lance la fonction d'acquisition de T°
-        Serial.println();
+//        Serial.println();
       }
       broadcast_change(module);
 
