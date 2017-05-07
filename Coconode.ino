@@ -16,6 +16,7 @@ SoftwareSerial BTSerie(RxD,TxD);
 #define SERVO_MODULE         0x05
 #define LINKY_MODULE         0x06
 #define THERMOMETER_MODULE   0x07
+#define SWITCH433            0x08
 
 #define MODULE_5A            185
 #define MODULE_20A           100
@@ -102,14 +103,20 @@ void             thermometer_setup(loaded_module* module, va_list args);
 void             thermometer_loop(loaded_module* module);
 byte             thermometer_event(loaded_module* module, char* buffer);
 
+void             switch433_setup(loaded_module* module, va_list args);
+void             switch433_loop(loaded_module* module);
+int              switch433_read(struct t_loaded_module *module);
+void             switch433_write(struct t_loaded_module *module, int value);
+byte             switch433_event(loaded_module* module, char* buffer);
 
 s_module compiled_modules[] = {
-  {BUTTON_MODULE,      "Button",     button_setup,      button_loop,       button_read, 0,          button_string_value,     button_append_event},
-  {LED_MODULE,         "Led",        led_setup,         led_loop,          led_read,    led_write,  0,                       led_append_event},
-  {POWER_METER_MODULE, "PowerMeter", powermeter_setup,  powermeter_loop,   0,           0,          powermeter_string_value, powermeter_append_event},
+  {BUTTON_MODULE,      "Button",     button_setup,      button_loop,       button_read,    0,               button_string_value,     button_append_event},
+  {LED_MODULE,         "Led",        led_setup,         led_loop,          led_read,       led_write,       0,                       led_append_event},
+  {POWER_METER_MODULE, "PowerMeter", powermeter_setup,  powermeter_loop,   0,              0,               powermeter_string_value, powermeter_append_event},
   {STATUS_LEDS_MODULE, "StatusLeds", setup_status_leds, loop_status_leds},
-  {LINKY_MODULE,       "Linky Relay",linky_setup,       linky_loop,        0,           0,          0,                       linky_event},
-  {THERMOMETER_MODULE, "Thermometer",thermometer_setup, thermometer_loop,  0,           0,          0,                       thermometer_event},
+  {LINKY_MODULE,       "Linky Relay",linky_setup,       linky_loop,        0,              0,               0,                       linky_event},
+  {THERMOMETER_MODULE, "Thermometer",thermometer_setup, thermometer_loop,  0,              0,               0,                       thermometer_event},
+  {SWITCH433,          "Switch433",  switch433_setup,   switch433_loop,    switch433_read, switch433_write, 0,                       switch433_event},
   0
 };
 
@@ -210,22 +217,42 @@ void setup() {
 //  add_module(LED_MODULE, 5);
 //  add_module(LED_MODULE, 6);
 //  add_module(POWER_METER_MODULE, A1, MODULE_20A);
-  add_module(THERMOMETER_MODULE, 8);
+//  add_module(THERMOMETER_MODULE, 8);
+  add_module(SWITCH433, 3, "11111", "00010");
+  add_module(SWITCH433, 3, "11111", "00100");
+  add_module(SWITCH433, 3, "11111", "01000");
+  add_module(SWITCH433, 3, "11111", "10000");
+  add_module(SWITCH433, 3, "01111", "00100");
+  add_module(SWITCH433, 3, "01111", "00010");
+  add_module(SWITCH433, 3, "01111", "01000");
+  add_module(SWITCH433, 3, "01111", "10000");
 
   // triplite
 //  add_module(LED_MODULE, 4);
 //  add_module(LED_MODULE, 5);
 //  add_module(LED_MODULE, 6);
 //  add_module(POWER_METER_MODULE, A1, MODULE_20A);
+//  add_module(THERMOMETER_MODULE, 8);
+
+  // modem
+//  add_module(THERMOMETER_MODULE, 8);
+//  add_module(LINKY_MODULE, 9, 10);
 
   // disjoncteur
 //  add_module(POWER_METER_MODULE, A0, MODULE_20A);
 //  add_module(POWER_METER_MODULE, A1, MODULE_20A);
 //  add_module(POWER_METER_MODULE, A2, MODULE_20A);
 //  add_module(POWER_METER_MODULE, A3, MODULE_30A);
+//  add_module(THERMOMETER_MODULE, 5);
 
   // Linky rekay
+//  add_module(THERMOMETER_MODULE, 8);
 //  add_module(LINKY_MODULE, 9, 10);
+
+  // dual switch
+//  add_module(BUTTON_MODULE, 2);
+//  add_module(BUTTON_MODULE, 3);
+
   Serial.println(F("+-----------------+"));
   
 //  Serial.print("+ Register i2c bus at ");Serial.print((int)channel);Serial.println();
